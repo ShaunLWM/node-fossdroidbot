@@ -189,10 +189,6 @@ class RedditBot {
                             return callback();
                         }
 
-                        if (result.length < 1) {
-                            result = 'Sorry, no apps were found in the database.';
-                        }
-
                         setTimeout(() => {
                             this.reddit.getComment(comment.id).reply(result).then(() => {
                                 console.log(`Replied to comment ${comment.id}`);
