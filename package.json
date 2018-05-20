@@ -7,6 +7,7 @@
   "license": "MIT",
   "dependencies": {
     "fast-xml-parser": "^3.10.0",
+    "fs-extra": "^6.0.1",
     "request": "^2.86.0",
     "snoowrap": "^1.15.2"
   },

@@ -6,6 +6,5 @@ const config = require('./config');
 
 const FDROID_REPO_XML = "https://f-droid.org/repo/index.xml";
 
-const r = new snoowrap(config.account);
-
-r.getSubreddit('overwatch').getHot().map(post => post.title).then(console.log);
+const RedditBot = require('./bot');
+RedditBot.start();
