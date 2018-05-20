@@ -7,6 +7,6 @@ module.exports = {
         const $ = cheerio.load(converted);
         $('blockquote').remove();
         $('a').remove();
-        return $.text();
+        return $.text().trim();
     }
 }
