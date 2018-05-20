@@ -9,6 +9,7 @@ const async = require('async');
 
 const NoSQL = require('nosql');
 let db = NoSQL.load(`./database.nosql`);
+let commentDb = NoSQL.load(`./comments.nosql`);
 
 const FDROID_REPO_XML = "https://f-droid.org/repo/index.xml";
 const REPO_FILENAME = 'repo.xml';
@@ -113,6 +114,20 @@ class RedditBot {
         );
     }
 
+    isReplied(commentId, callback) {
+        commentDb.find().make(filter => {
+            filter.where('id', '=', commentId);
+            filter.callback((error, response) => {
+                if (error) {
+                    return callback(null, null);
+                }
+
+                console.log(response);
+                return callback(null, response);
+            });
+        });
+    }
+
     insertToDatabase({
         id,
         lastupdated,
@@ -157,29 +172,38 @@ class RedditBot {
             return match != null;
         }).then(comments => {
             async.eachSeries(comments, (comment, callback) => {
-                let converted = utils.convertMarkdown(comment.body);
-                var commentRegex = /foss[\s]*me[\s]*:[\s]*(.*?)(?:\.|;|$)/gim;
-                var match = commentRegex.exec(converted);
-                if (match == null) {
-                    return;
-                }
-
-                this.generateReply(match[1], (error, result) => {
-                    if (error) {
+                this.isReplied(comment.id, (error, isReplied) => {
+                    if (error || isReplied == null) {
                         return callback();
                     }
 
-                    if (result.length < 1) {
-                        result = 'Sorry, no apps were found in the database.';
+                    let converted = utils.convertMarkdown(comment.body);
+                    var commentRegex = /foss[\s]*me[\s]*:[\s]*(.*?)(?:\.|;|$)/gim;
+                    var match = commentRegex.exec(converted);
+                    if (match == null) {
+                        return;
                     }
 
-                    setTimeout(() => {
-                        console.log(comment.id);
-                        this.reddit.getComment(comment.id).reply(result).then(() => {
-                            console.log('Done');
+                    this.generateReply(match[1], (error, result) => {
+                        if (error) {
                             return callback();
-                        });
-                    }, 2000);
+                        }
+
+                        if (result.length < 1) {
+                            result = 'Sorry, no apps were found in the database.';
+                        }
+
+                        setTimeout(() => {
+                            this.reddit.getComment(comment.id).reply(result).then(() => {
+                                console.log(`Replied to comment ${comment.id}`);
+                                return callback();
+                            }).catch(error => {
+                                console.log(`Error replied to comment ${comment.id} -> ${error}`);
+                                return callback();
+                            });
+                        }, 2000);
+                    });
+
                 });
             }, error => {
                 this.stop();
