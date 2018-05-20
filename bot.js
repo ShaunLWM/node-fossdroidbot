@@ -32,10 +32,14 @@ class RedditBot {
 
         fs.ensureFileSync(this.botRunningFile);
         console.debug('Bot logging in..');
-        this.reddit.getSubreddit(config.subreddits.join('+')).getNewComments().then((comments) => {
-            
-        });
+        this.reddit.getSubreddit(config.subreddits.join('+')).getNewComments().filter(comment => {
+            // var commentRegex = /foss[\s]*me[\s]*:[\s]*(.*?)(?:\.|;|$)/gim;
+            var commentRegex = /you (.*?).*?$/gim;
+            var match = commentRegex.exec(comment.body);
+            return match != null;
+        }).then(comments => {
 
+        });
     }
 }
 
