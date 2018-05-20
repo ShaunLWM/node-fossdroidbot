@@ -427,6 +427,10 @@ nopt@~2.1.1:
   dependencies:
     abbrev "1"
 
+nosql@^6.1.0:
+  version "6.1.0"
+  resolved "https://registry.yarnpkg.com/nosql/-/nosql-6.1.0.tgz#cb6d49063e6998f1ff90cc6ea62842f4b2d5c51b"
+
 nth-check@~1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/nth-check/-/nth-check-1.0.1.tgz#9929acdf628fc2c41098deab82ac580cf149aae4"

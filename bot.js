@@ -48,10 +48,13 @@ class RedditBot {
     }
 
     generateReply(apps) {
-        let requestedApps = apps.split(',');
-        requestedApps.forEach((app, index) => {
+        let i = 0;
+        const repoMaxApp = this.repoFile.length;
 
-        });
+        let requestedApps = apps.split(',');
+        for (; i < repoMaxApp; i++) {
+
+        }
     }
 
     stop() {
