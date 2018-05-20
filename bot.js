@@ -70,7 +70,7 @@ class RedditBot {
                 }
 
                 if (data === NO_APP_FOUND) {
-                    body = `No application found for "${appName.trim()}"\n\n`;
+                    body += `No application found for "${appName.trim()}"\n\n`;
                     return cb();
                 }
 
