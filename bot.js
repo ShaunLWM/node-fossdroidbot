@@ -181,7 +181,7 @@ class RedditBot {
                     var commentRegex = /foss[\s]*me[\s]*:[\s]*(.*?)(?:\.|;|$)/gim;
                     var match = commentRegex.exec(converted);
                     if (match == null) {
-                        return;
+                        return callback();
                     }
 
                     this.generateReply(match[1], (error, result) => {
