@@ -173,10 +173,13 @@ class RedditBot {
                         result = 'Sorry, no apps were found in the database.';
                     }
 
-                    this.reddit.getComment(comment.id).reply(result).then(() => {
-                        console.log('Done');
-                        return callback();
-                    });
+                    setTimeout(() => {
+                        console.log(comment.id);
+                        this.reddit.getComment(comment.id).reply(result).then(() => {
+                            console.log('Done');
+                            return callback();
+                        });
+                    }, 2000);
                 });
             }, error => {
                 this.stop();
