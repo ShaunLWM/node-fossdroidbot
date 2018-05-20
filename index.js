@@ -8,6 +8,5 @@ RedditBot.updateRepository(error => {
         return console.log(error);
     }
 
-    RedditBot.isReplied();
-    //RedditBot.start();
+    RedditBot.start();
 });

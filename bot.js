@@ -13,7 +13,8 @@ let commentDb = NoSQL.load(`./comments.nosql`);
 
 const FDROID_REPO_XML = "https://f-droid.org/repo/index.xml";
 const REPO_FILENAME = 'repo.xml';
-const NO_APP_FOUND = 'no_app-found';
+const NO_APP_FOUND = 'no-app-found';
+const NO_REPLY_FOUND = 'no-reply-found';
 
 class RedditBot {
     constructor() {
@@ -115,23 +116,35 @@ class RedditBot {
     }
 
     isReplied(commentId, callback) {
-        commentDb.find().make(filter => {
-            filter.where('id', '=', commentId);
-            filter.callback((error, response) => {
-                if (error) {
-                    return callback(null, null);
-                }
+        let details = null;
+        async.whilst(
+            () => {
+                return details == null;
+            },
+            callback => {
+                commentDb.find().make(filter => {
+                    filter.where('id', '=', commentId);
+                    filter.callback((error, response) => {
+                        if (error || response.length < 1) {
+                            details = NO_REPLY_FOUND;
+                            return callback(null, NO_REPLY_FOUND);
+                        }
 
-                console.log(response);
-                return callback(null, response);
-            });
-        });
+                        details = response[0];
+                        return callback(null, response);
+                    });
+                });
+            },
+            (err, n) => {
+                return callback(null, details);
+            }
+        );
     }
 
     addReplied(commentId) {
         commentDb.insert({
             id: commentId,
-        });
+        }, true).where('id', commentId);
     }
 
     insertToDatabase({
@@ -178,8 +191,14 @@ class RedditBot {
             return match != null;
         }).then(comments => {
             async.eachSeries(comments, (comment, callback) => {
-                this.isReplied(comment.id, (error, isReplied) => {
-                    if (error || isReplied == null) {
+                this.isReplied(comment.id, (error, replied) => {
+                    if (error) {
+                        console.log(`[${comment.id}] Error: ${error}`);
+                        return callback();
+                    }
+
+                    if (replied != NO_REPLY_FOUND) {
+                        console.log(`[${comment.id}]: Replied before.`);
                         return callback();
                     }
 
@@ -197,11 +216,11 @@ class RedditBot {
 
                         setTimeout(() => {
                             this.reddit.getComment(comment.id).reply(result).then(() => {
-                                console.log(`Replied to comment ${comment.id}`);
+                                console.log(`${comment.id} Replied to comment ${comment.id}`);
                                 this.addReplied(comment.id);
                                 return callback();
                             }).catch(error => {
-                                console.log(`Error replied to comment ${comment.id} -> ${error}`);
+                                console.log(`${comment.id} Error replying to comment ${comment.id} -> ${error}`);
                                 return callback();
                             });
                         }, 2000);
@@ -209,7 +228,9 @@ class RedditBot {
 
                 });
             }, error => {
-                this.stop();
+                setTimeout(() => {
+                    this.stop();
+                }, 3000);
             });
         });
     }
