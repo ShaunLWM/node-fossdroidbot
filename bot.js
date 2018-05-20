@@ -4,13 +4,15 @@ const snoowrap = require('snoowrap');
 const utils = require('./utils');
 const request = require('request');
 const rp = require('request-promise');
-var parseString = require('xml2js').parseString;
+const parseString = require('xml2js').parseString;
+const async = require('async');
 
 const NoSQL = require('nosql');
 let db = NoSQL.load(`./database.nosql`);
 
 const FDROID_REPO_XML = "https://f-droid.org/repo/index.xml";
 const REPO_FILENAME = 'repo.xml';
+const NO_APP_FOUND = 'no_app-found';
 
 class RedditBot {
     constructor() {
@@ -55,14 +57,60 @@ class RedditBot {
         }
     }
 
-    generateReply(apps) {
-        let i = 0;
-        const repoMaxApp = this.repoFile.length;
-
+    generateReply(apps, callback) {
         let requestedApps = apps.split(',');
-        for (; i < repoMaxApp; i++) {
+        let body = '';
+        console.log('Searching for apps in comments: ' + requestedApps);
+        async.eachSeries(requestedApps, (appName, cb) => {
+            console.log(`Searching for ${appName.trim()}`);
+            this.findApp(appName.trim(), (error, data) => {
+                if (error) {
+                    console.error('Error: ' + error);
+                    return cb();
+                }
 
-        }
+                if (data === NO_APP_FOUND) {
+                    body = `No application found for "${appName.trim()}"\n\n`;
+                    return cb();
+                }
+
+                if (requestedApps.length == 1) {
+                    body = `[${data.name}](https://f-droid.org/en/packages/${data.id}/)\n\n> ${data.description}`;
+                } else {
+                    body += `[${data.name}](https://f-droid.org/en/packages/${data.id}/) - ${data.summary}\n\n`;
+                }
+
+                return cb();
+            })
+        }, error => {
+            return callback(error, body);
+        });
+    }
+
+    findApp(appName, callback) {
+        let details = null;
+        async.whilst(
+            () => {
+                return details == null;
+            },
+            callback => {
+                db.find().make(builder => {
+                    builder.filter((app) => app.name.toLowerCase().indexOf(appName.toLowerCase()) > -1);
+                    builder.callback((error, data) => {
+                        if (error || data.length < 1) {
+                            details = NO_APP_FOUND;
+                            return callback();
+                        }
+
+                        details = data[0];
+                        return callback();
+                    }); //err, data
+                });
+            },
+            (err, n) => {
+                return callback(null, details);
+            }
+        );
     }
 
     insertToDatabase({
@@ -70,14 +118,16 @@ class RedditBot {
         lastupdated,
         name,
         summary,
-        marketversion
+        marketversion,
+        desc
     }) {
         db.insert({
             id: id[0],
             updated: lastupdated[0],
             name: name[0],
             summary: summary[0],
-            version: marketversion[0]
+            version: marketversion[0],
+            description: desc[0]
         }, true).where(id, id[0]);
     }
 
@@ -100,15 +150,37 @@ class RedditBot {
 
         fs.ensureFileSync(this.botRunningFile);
         console.debug('Bot logging in..');
-        this.reddit.getSubreddit(config.subreddits.join('+')).getNewComments().map(comment => {
+        this.reddit.getSubreddit(config.subreddits.join('+')).getNewComments().filter(comment => {
             let converted = utils.convertMarkdown(comment.body);
             var commentRegex = /foss[\s]*me[\s]*:[\s]*(.*?)(?:\.|;|$)/gim;
             var match = commentRegex.exec(converted);
-            if (match != null) {
-                console.log(match[1]);
-            }
-        }).then(() => {
-            this.stop();
+            return match != null;
+        }).then(comments => {
+            async.eachSeries(comments, (comment, callback) => {
+                let converted = utils.convertMarkdown(comment.body);
+                var commentRegex = /foss[\s]*me[\s]*:[\s]*(.*?)(?:\.|;|$)/gim;
+                var match = commentRegex.exec(converted);
+                if (match == null) {
+                    return;
+                }
+
+                this.generateReply(match[1], (error, result) => {
+                    if (error) {
+                        return callback();
+                    }
+
+                    if (result.length < 1) {
+                        result = 'Sorry, no apps were found in the database.';
+                    }
+
+                    this.reddit.getComment(comment.id).reply(result).then(() => {
+                        console.log('Done');
+                        return callback();
+                    });
+                });
+            }, error => {
+                this.stop();
+            });
         });
     }
 }
