@@ -32,7 +32,8 @@ class RedditBot {
 
         fs.ensureFileSync(this.botRunningFile);
         console.debug('Bot logging in..');
-        const comments = this.reddit.getSubreddit(config.subreddits.join('+')).getNewComments().then((comments) => {
+        this.reddit.getSubreddit(config.subreddits.join('+')).getNewComments().then((comments) => {
+            
         });
 
     }
