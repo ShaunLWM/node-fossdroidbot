@@ -4,6 +4,7 @@ const snoowrap = require('snoowrap');
 const utils = require('./utils');
 const request = require('request');
 const rp = require('request-promise');
+var parseString = require('xml2js').parseString;
 
 const FDROID_REPO_XML = "https://f-droid.org/repo/index.xml";
 const REPO_FILENAME = 'repo.xml';
@@ -24,17 +25,25 @@ class RedditBot {
         if (!fs.pathExistsSync(this.repoFileDirectory) || ((parseInt(fs.statSync(__dirname + '/config.js').mtimeMs / 1000) + 86400) < Math.floor(new Date() / 1000))) {
             console.log('Downloading repository..');
             rp(FDROID_REPO_XML)
-                .then(htmlString => {
-                    fs.writeFileSync(this.repoFileDirectory, htmlString);
+                .then(data => {
+                    fs.writeFileSync(this.repoFileDirectory, data);
                     console.log('Downloaded repository..');
-                    return callback();
+                    parseString(fs.readFileSync(this.repoFileDirectory), (err, result) => {
+                        this.repoFile = result.fdroid.application;
+                        console.log(`${this.repoFile.length} application loaded..`);
+                        return callback();
+                    });
                 })
                 .catch(error => {
                     return callback(error);
                 });
         } else {
             console.log('Repository is up-to-date..');
-            return callback();
+            parseString(fs.readFileSync(this.repoFileDirectory), (err, result) => {
+                this.repoFile = result.fdroid.application;
+                console.log(`${this.repoFile.length} application loaded..`);
+                return callback();
+            });
         }
     }
 
