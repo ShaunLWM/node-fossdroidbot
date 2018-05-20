@@ -7,6 +7,10 @@
   "license": "MIT",
   "dependencies": {
     "fast-xml-parser": "^3.10.0",
+    "request": "^2.86.0",
     "snoowrap": "^1.15.2"
+  },
+  "devDependencies": {
+    "reddit-oauth-helper": "^0.3.0"
   }
 }
