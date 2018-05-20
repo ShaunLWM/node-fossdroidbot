@@ -4,13 +4,19 @@ const snoowrap = require('snoowrap');
 const utils = require('./utils');
 class RedditBot {
     constructor() {
-
         this.botRunningFile = `${__dirname}/${config.botRunningFile}`;
         this.reddit = new snoowrap(config.account);
         if (typeof this.reddit.getMe() == 'undefined') {
             console.error('Unable to get bot info..');
             return process.exit(1);
         }
+    }
+
+    generateReply(apps) {
+        let requestedApps = apps.split(',');
+        requestedApps.forEach((app, index) => {
+
+        });
     }
 
     stop() {
