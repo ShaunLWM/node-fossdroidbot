@@ -32,7 +32,9 @@ class RedditBot {
 
         fs.ensureFileSync(this.botRunningFile);
         console.debug('Bot logging in..');
-        this.reddit.getSubreddit('overwatch+globaloffensive').getHot().map(post => post.title).then(console.log);
+        const comments = this.reddit.getSubreddit(config.subreddits.join('+')).getNewComments().then((comments) => {
+        });
+
     }
 }
 
