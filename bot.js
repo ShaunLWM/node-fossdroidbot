@@ -128,6 +128,12 @@ class RedditBot {
         });
     }
 
+    addReplied(commentId) {
+        commentDb.insert({
+            id: commentId,
+        });
+    }
+
     insertToDatabase({
         id,
         lastupdated,
@@ -192,6 +198,7 @@ class RedditBot {
                         setTimeout(() => {
                             this.reddit.getComment(comment.id).reply(result).then(() => {
                                 console.log(`Replied to comment ${comment.id}`);
+                                this.addReplied(comment.id);
                                 return callback();
                             }).catch(error => {
                                 console.log(`Error replied to comment ${comment.id} -> ${error}`);
