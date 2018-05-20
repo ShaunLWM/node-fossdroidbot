@@ -6,6 +6,9 @@ const request = require('request');
 const rp = require('request-promise');
 var parseString = require('xml2js').parseString;
 
+const NoSQL = require('nosql');
+let db = NoSQL.load(`./database.nosql`);
+
 const FDROID_REPO_XML = "https://f-droid.org/repo/index.xml";
 const REPO_FILENAME = 'repo.xml';
 
@@ -31,6 +34,11 @@ class RedditBot {
                     parseString(fs.readFileSync(this.repoFileDirectory), (err, result) => {
                         this.repoFile = result.fdroid.application;
                         console.log(`${this.repoFile.length} application loaded..`);
+                        this.repoFile.forEach((app, index) => {
+                            console.log(`Inserting ${index}`);
+                            this.insertToDatabase(app);
+                        });
+
                         return callback();
                     });
                 })
@@ -55,6 +63,22 @@ class RedditBot {
         for (; i < repoMaxApp; i++) {
 
         }
+    }
+
+    insertToDatabase({
+        id,
+        lastupdated,
+        name,
+        summary,
+        marketversion
+    }) {
+        db.insert({
+            id: id[0],
+            updated: lastupdated[0],
+            name: name[0],
+            summary: summary[0],
+            version: marketversion[0]
+        }, true).where(id, id[0]);
     }
 
     stop() {

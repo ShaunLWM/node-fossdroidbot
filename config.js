@@ -18,5 +18,6 @@ module.exports = {
     maxAppsPerComment: 10,
     closingFormula: "\n\n------\n\n[^Source ^Code](https://github.com/crisbal/PlayStoreLinks_Bot) ^| [^Feedback/Bug ^report](http://www.reddit.com/r/cris9696) ^| ^Bot ^by ^/u/cris9696 ",
     logFile: "bot.log",
-    botRunningFile: "botRunning"
+    botRunningFile: "botRunning",
+    nosqlFile: 'database.nosql'
 }
