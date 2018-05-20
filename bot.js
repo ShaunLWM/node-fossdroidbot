@@ -1,7 +1,7 @@
 const fs = require('fs-extra');
 const config = require('./config');
 const snoowrap = require('snoowrap');
-
+const utils = require('./utils');
 class RedditBot {
     constructor() {
 
@@ -34,11 +34,11 @@ class RedditBot {
         console.debug('Bot logging in..');
         this.reddit.getSubreddit(config.subreddits.join('+')).getNewComments().filter(comment => {
             // var commentRegex = /foss[\s]*me[\s]*:[\s]*(.*?)(?:\.|;|$)/gim;
-            var commentRegex = /you (.*?).*?$/gim;
+            var commentRegex = /we (.*?).*?$/gim;
             var match = commentRegex.exec(comment.body);
             return match != null;
-        }).then(comments => {
-
+        }).map(comment => {
+            console.log(utils.convertMarkdown(comment.body));
         });
     }
 }

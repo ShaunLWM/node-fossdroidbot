@@ -6,8 +6,10 @@
   "author": "Shaun <shaunidiot@users.noreply.github.com>",
   "license": "MIT",
   "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
     "fast-xml-parser": "^3.10.0",
     "fs-extra": "^6.0.1",
+    "markdown": "^0.5.0",
     "request": "^2.86.0",
     "snoowrap": "^1.15.2"
   },
