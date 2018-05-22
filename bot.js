@@ -30,6 +30,7 @@ class RedditBot {
 
     updateRepository(callback) {
         if (!fs.pathExistsSync(this.repoFileDirectory) || ((parseInt(fs.statSync(__dirname + '/config.js').mtimeMs / 1000) + 86400) < Math.floor(new Date() / 1000))) {
+            fs.removeSync(this.repoFileDirectory);
             console.log('Downloading repository..');
             rp(FDROID_REPO_XML)
                 .then(data => {
