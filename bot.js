@@ -33,7 +33,7 @@ class RedditBot {
     }
 
     updateRepository(callback) {
-        if (!fs.pathExistsSync(this.repoFileDirectory) || ((parseInt(fs.statSync(__dirname + '/config.js').mtimeMs / 1000) + 86400) < Math.floor(new Date() / 1000))) {
+        if (!fs.pathExistsSync(this.repoFileDirectory) || ((parseInt(fs.statSync(`${__dirname}/${REPO_FILENAME}`).mtimeMs / 1000) + 86400) < Math.floor(new Date() / 1000))) {
             fs.removeSync(this.repoFileDirectory);
             fs.removeSync(DATABASE_APPS);
             console.log('Downloading repository..');
