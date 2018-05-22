@@ -65,12 +65,7 @@ class RedditBot {
         console.log('Searching for apps in comments: ' + requestedApps);
         async.eachSeries(requestedApps, (appName, cb) => {
             console.log(`Searching for ${appName.trim()}`);
-            this.findApp(appName.trim(), (error, data) => {
-                if (error) {
-                    console.error('Error: ' + error);
-                    return cb();
-                }
-
+            const data = this.findApp(appName.trim()).then(data => {
                 if (data === NO_APP_FOUND) {
                     body += `No application found for "${appName.trim()}"\n\n`;
                     return cb();
@@ -83,62 +78,48 @@ class RedditBot {
                 }
 
                 return cb();
-            })
+            }).catch(error => {
+                return cb();
+            });
         }, error => {
             return callback(error, body);
         });
     }
 
-    findApp(appName, callback) {
+    findApp(appName) {
         let details = null;
-        async.whilst(
-            () => {
-                return details == null;
-            },
-            callback => {
-                db.find().make(builder => {
-                    builder.filter((app) => app.name.toLowerCase().indexOf(appName.toLowerCase()) > -1);
-                    builder.callback((error, data) => {
-                        if (error || data.length < 1) {
-                            details = NO_APP_FOUND;
-                            return callback();
-                        }
+        return new Promise((resolve, reject) => {
+            db.find().make(builder => {
+                builder.filter((app) => app.name.toLowerCase().indexOf(appName.toLowerCase()) > -1);
+                builder.callback((error, data) => {
+                    if (error || data.length < 1) {
+                        details = NO_APP_FOUND;
+                        return resolve(NO_APP_FOUND);
+                    }
 
-                        details = data[0];
-                        return callback();
-                    }); //err, data
+                    details = data[0];
+                    return resolve(details);
                 });
-            },
-            (err, n) => {
-                return callback(null, details);
-            }
-        );
+            });
+        });
     }
 
     isReplied(commentId, callback) {
         let details = null;
-        async.whilst(
-            () => {
-                return details == null;
-            },
-            callback => {
-                commentDb.find().make(filter => {
-                    filter.where('id', '=', commentId);
-                    filter.callback((error, response) => {
-                        if (error || response.length < 1) {
-                            details = NO_REPLY_FOUND;
-                            return callback(null, NO_REPLY_FOUND);
-                        }
+        return new Promise((resolve, reject) => {
+            commentDb.find().make(filter => {
+                filter.where('id', '=', commentId);
+                filter.callback((error, response) => {
+                    if (error || response.length < 1) {
+                        details = NO_REPLY_FOUND;
+                        return resolve(null, NO_REPLY_FOUND);
+                    }
 
-                        details = response[0];
-                        return callback(null, response);
-                    });
+                    details = response[0];
+                    return resolve(null, response);
                 });
-            },
-            (err, n) => {
-                return callback(null, details);
-            }
-        );
+            });
+        });
     }
 
     addReplied(commentId) {
@@ -191,12 +172,7 @@ class RedditBot {
             return match != null;
         }).then(comments => {
             async.eachSeries(comments, (comment, callback) => {
-                this.isReplied(comment.id, (error, replied) => {
-                    if (error) {
-                        console.log(`[${comment.id}] Error: ${error}`);
-                        return callback();
-                    }
-
+                this.isReplied(comment.id).then(replied => {
                     if (replied != NO_REPLY_FOUND) {
                         console.log(`[${comment.id}]: Replied before.`);
                         return callback();
@@ -216,7 +192,7 @@ class RedditBot {
 
                         setTimeout(() => {
                             this.reddit.getComment(comment.id).reply(result).then(() => {
-                                console.log(`${comment.id} Replied to comment ${comment.id}`);
+                                console.log(`[${comment.id}] Replied to comment ${comment.id}`);
                                 this.addReplied(comment.id);
                                 return callback();
                             }).catch(error => {
@@ -225,7 +201,9 @@ class RedditBot {
                             });
                         }, 2000);
                     });
-
+                }).catch(error => {
+                    console.log(`[${comment.id}] Error: ${error}`);
+                    return callback();
                 });
             }, error => {
                 setTimeout(() => {
