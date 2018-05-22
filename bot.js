@@ -8,13 +8,17 @@ const parseString = require('xml2js').parseString;
 const async = require('async');
 
 const NoSQL = require('nosql');
-let db = NoSQL.load(`./database.nosql`);
-let commentDb = NoSQL.load(`./comments.nosql`);
 
 const FDROID_REPO_XML = "https://f-droid.org/repo/index.xml";
 const REPO_FILENAME = 'repo.xml';
 const NO_APP_FOUND = 'no-app-found';
 const NO_REPLY_FOUND = 'no-reply-found';
+
+const DATABASE_APPS = './database.nosql';
+const DATABASE_COMMENTS = './comments.nosql';
+
+let db = NoSQL.load(DATABASE_APPS);
+let commentDb = NoSQL.load(DATABASE_COMMENTS);
 
 class RedditBot {
     constructor() {
@@ -31,6 +35,7 @@ class RedditBot {
     updateRepository(callback) {
         if (!fs.pathExistsSync(this.repoFileDirectory) || ((parseInt(fs.statSync(__dirname + '/config.js').mtimeMs / 1000) + 86400) < Math.floor(new Date() / 1000))) {
             fs.removeSync(this.repoFileDirectory);
+            fs.removeSync(DATABASE_APPS);
             console.log('Downloading repository..');
             rp(FDROID_REPO_XML)
                 .then(data => {
