@@ -118,11 +118,11 @@ class RedditBot {
                 filter.callback((error, response) => {
                     if (error || response.length < 1) {
                         details = NO_REPLY_FOUND;
-                        return resolve(null, NO_REPLY_FOUND);
+                        return resolve(NO_REPLY_FOUND);
                     }
 
                     details = response[0];
-                    return resolve(null, response);
+                    return resolve(response);
                 });
             });
         });
