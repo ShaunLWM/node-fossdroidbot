@@ -1,5 +1,21 @@
-const colors = require("chalk");
 const moment = require("moment");
+var winston = require('winston');
+require('winston-daily-rotate-file');
+
+var transport = new (winston.transports.DailyRotateFile)({
+    filename: 'application-%DATE%.log',
+    datePattern: 'YYYY-MM-DD-HH',
+    zippedArchive: true,
+    maxSize: '20m',
+    maxFiles: '14d'
+});
+
+var logger = new (winston.Logger)({
+    transports: [
+        transport,
+        new (winston.transports.Console)({ colorize: true })
+    ]
+});
 
 function timestamp() {
     const format = "YYYY-MM-DD HH:mm:ss";
@@ -10,18 +26,18 @@ function timestamp() {
 
 module.exports = {
     error(...args) {
-        console.error(timestamp(), colors.red("[ERROR]"), ...args);
+        logger.error(timestamp(), ...args);
     },
     warn(...args) {
-        console.error(timestamp(), colors.yellow("[WARN]"), ...args);
+        logger.warn(timestamp(), ...args);
     },
     info(...args) {
-        console.log(timestamp(), colors.blue("[INFO]"), ...args);
+        logger.info(timestamp(), ...args);
     },
     debug(...args) {
-        console.log(timestamp(), colors.green("[DEBUG]"), ...args);
+        logger.debug(timestamp(), ...args);
     },
     raw(...args) {
-        console.log(...args);
+        logger.verbose(...args);
     }
 };

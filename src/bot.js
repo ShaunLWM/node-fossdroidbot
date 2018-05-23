@@ -7,6 +7,7 @@ const rp = require('request-promise');
 const parseString = require('xml2js').parseString;
 const async = require('async');
 
+const logger = require('./logger');
 const NoSQL = require('nosql');
 
 const FDROID_REPO_XML = "https://f-droid.org/repo/index.xml";
@@ -28,25 +29,25 @@ class RedditBot {
         fs.ensureDirSync(this.dataFolder);
         this.reddit = new snoowrap(config.account);
         if (typeof this.reddit.getMe() == 'undefined') {
-            console.error('Unable to get bot info..');
+            logger.error('Unable to get bot info..');
             return process.exit(1);
         }
     }
 
     updateRepository(callback) {
-        if (!fs.pathExistsSync(this.repoFileDirectory) || ((parseInt(fs.statSync(`${this.dataFolder}/${REPO_FILENAME}`).mtimeMs / 1000) + 86400) < Math.floor(new Date() / 1000))) {
+        if (!fs.pathExistsSync(this.repoFileDirectory) || ((parseInt(fs.statSync(this.repoFileDirectory).mtimeMs / 1000) + 86400) < Math.floor(new Date() / 1000))) {
             fs.removeSync(this.repoFileDirectory);
             fs.removeSync(this.commentsDatabaseDirectory);
-            console.log('Downloading repository..');
+            logger.info('Downloading repository..');
             rp(FDROID_REPO_XML)
                 .then(data => {
                     fs.writeFileSync(this.repoFileDirectory, data);
-                    console.log('Downloaded repository..');
+                    logger.info('Downloaded repository..');
                     parseString(fs.readFileSync(this.repoFileDirectory), (err, result) => {
                         this.repoFile = result.fdroid.application;
-                        console.log(`${this.repoFile.length} application loaded..`);
+                        logger.info(`${this.repoFile.length} application loaded..`);
                         this.repoFile.forEach((app, index) => {
-                            console.log(`Inserting ${index}`);
+                            logger.debug(`Inserting ${index}`);
                             this.insertToDatabase(app);
                         });
 
@@ -54,14 +55,14 @@ class RedditBot {
                     });
                 })
                 .catch(error => {
-                    console.error(error);
+                    logger.error(error);
                     return callback(error);
                 });
         } else {
-            console.log('Repository is up-to-date..');
+            logger.info('Repository is up-to-date..');
             parseString(fs.readFileSync(this.repoFileDirectory), (err, result) => {
                 this.repoFile = result.fdroid.application;
-                console.log(`${this.repoFile.length} application loaded..`);
+                logger.info(`${this.repoFile.length} application loaded..`);
                 return callback();
             });
         }
@@ -74,12 +75,12 @@ class RedditBot {
         if (requestedApps.length > config.maxAppsPerComment) {
             isTooMany = true;
             requestedApps = requestedApps.slice(0, config.maxAppsPerComment);
-            console.log(`Too many apps request..`);
+            logger.warn(`Too many apps request..`);
         }
 
-        console.log('Searching for apps in comments: ' + requestedApps);
+        logger.info('Searching for apps in comments: ' + requestedApps);
         async.eachSeries(requestedApps, (appName, cb) => {
-            console.log(`Searching for ${appName.trim()}`);
+            logger.debug(`Searching for ${appName.trim()}`);
             const data = this.findApp(appName.trim()).then(data => {
                 if (data === NO_APP_FOUND) {
                     body += `No application found for "${appName.trim()}"\n\n`;
@@ -167,9 +168,9 @@ class RedditBot {
     }
 
     stop() {
-        console.log('Stopping bot..');
+        logger.info('Stopping bot..');
         if (fs.pathExistsSync(this.botRunningFile)) {
-            console.log('Deleting lockfile..');
+            logger.info('Deleting lockfile..');
             fs.removeSync(this.botRunningFile);
         }
 
@@ -177,14 +178,14 @@ class RedditBot {
     }
 
     start() {
-        console.log('Starting bot..');
+        logger.info('Starting bot..');
         if (fs.pathExistsSync(this.botRunningFile)) {
-            console.warn('The bot is already running..');
+            logger.error('The bot is already running..');
             return this.stop();
         }
 
         fs.ensureFileSync(this.botRunningFile);
-        console.debug('Bot logging in..');
+        logger.debug('Bot logging in..');
         this.reddit.getSubreddit(config.subreddits.join('+')).getNewComments().filter(comment => {
             let converted = utils.convertMarkdown(comment.body);
             var commentRegex = /foss[\s]*me[\s]*:[\s]*(.*?)(?:\.|;|$)/gim;
@@ -192,14 +193,14 @@ class RedditBot {
             return match != null;
         }).then(comments => {
             if (comments.length < 1) {
-                console.log('No comments found.');
+                logger.debug('No comments found.');
                 return this.stop();
             }
 
             async.eachSeries(comments, (comment, callback) => {
                 this.isReplied(comment.id).then(replied => {
                     if (replied != NO_REPLY_FOUND) {
-                        console.log(`[${comment.id}]: Replied before.`);
+                        logger.debug(`[${comment.id}]: Replied before.`);
                         return callback();
                     }
 
@@ -217,17 +218,17 @@ class RedditBot {
 
                         setTimeout(() => {
                             this.reddit.getComment(comment.id).reply(result).then(() => {
-                                console.log(`[${comment.id}] Replied to comment ${comment.id}`);
+                                logger.info(`[${comment.id}] Replied to comment ${comment.id}`);
                                 this.addReplied(comment.id);
                                 return callback();
                             }).catch(error => {
-                                console.log(`${comment.id} Error replying to comment ${comment.id} -> ${error}`);
+                                logger.error(`${comment.id} Error replying to comment ${comment.id} -> ${error}`);
                                 return callback();
                             });
                         }, 2000);
                     });
                 }).catch(error => {
-                    console.log(`[${comment.id}] Error: ${error}`);
+                    logger.error(`[${comment.id}] Error: ${error}`);
                     return callback();
                 });
             }, error => {
