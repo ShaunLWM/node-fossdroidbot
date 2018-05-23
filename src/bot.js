@@ -69,9 +69,10 @@ class RedditBot {
         let requestedApps = apps.split(',');
         let body = '';
         let isTooMany = false;
-        if (requestedApps > config.maxAppsPerComment) {
+        if (requestedApps.length > config.maxAppsPerComment) {
             isTooMany = true;
             requestedApps = requestedApps.slice(0, config.maxAppsPerComment);
+            console.log(`Too many apps request..`);
         }
 
         console.log('Searching for apps in comments: ' + requestedApps);
