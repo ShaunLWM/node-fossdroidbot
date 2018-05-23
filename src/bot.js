@@ -10,21 +10,21 @@ const async = require('async');
 const NoSQL = require('nosql');
 
 const FDROID_REPO_XML = "https://f-droid.org/repo/index.xml";
-const REPO_FILENAME = 'repo.xml';
 const NO_APP_FOUND = 'no-app-found';
 const NO_REPLY_FOUND = 'no-reply-found';
 
-const DATABASE_APPS = './database.nosql';
-const DATABASE_COMMENTS = './comments.nosql';
-
-let db = NoSQL.load(DATABASE_APPS);
-let commentDb = NoSQL.load(DATABASE_COMMENTS);
-
 class RedditBot {
     constructor({ dataFolder }) {
-        this.repoFileDirectory = `${__dirname}/${REPO_FILENAME}`;
+        this.dataFolder = dataFolder;
+        this.appDatabaseDirectory = `${dataFolder}/${config.appsDatabaseFilename}`;
+        this.appsDatabase = NoSQL.load(this.appDatabaseDirectory);
+
+        this.commentsDatabaseDirectory = `${dataFolder}/${config.commentsDatabaseFilename}`;
+        this.commentsDatabase = NoSQL.load(this.commentsDatabaseDirectory);
+
+        this.repoFileDirectory = `${this.dataFolder}/${config.repositoryFilename}`;
         this.repoFile = null;
-        this.botRunningFile = `${__dirname}/${config.botRunningFile}`;
+        this.botRunningFile = `${this.dataFolder}/${config.botRunningFile}`;
         this.reddit = new snoowrap(config.account);
         if (typeof this.reddit.getMe() == 'undefined') {
             console.error('Unable to get bot info..');
@@ -33,9 +33,9 @@ class RedditBot {
     }
 
     updateRepository(callback) {
-        if (!fs.pathExistsSync(this.repoFileDirectory) || ((parseInt(fs.statSync(`${__dirname}/${REPO_FILENAME}`).mtimeMs / 1000) + 86400) < Math.floor(new Date() / 1000))) {
+        if (!fs.pathExistsSync(this.repoFileDirectory) || ((parseInt(fs.statSync(`${this.dataFolder}/${REPO_FILENAME}`).mtimeMs / 1000) + 86400) < Math.floor(new Date() / 1000))) {
             fs.removeSync(this.repoFileDirectory);
-            fs.removeSync(DATABASE_APPS);
+            fs.removeSync(this.commentsDatabaseDirectory);
             console.log('Downloading repository..');
             rp(FDROID_REPO_XML)
                 .then(data => {
@@ -53,6 +53,7 @@ class RedditBot {
                     });
                 })
                 .catch(error => {
+                    console.error(error);
                     return callback(error);
                 });
         } else {
@@ -107,7 +108,7 @@ class RedditBot {
     findApp(appName) {
         let details = null;
         return new Promise((resolve, reject) => {
-            db.find().make(builder => {
+            this.appsDatabase.find().make(builder => {
                 builder.filter((app) => app.name.toLowerCase().indexOf(appName.toLowerCase()) > -1);
                 builder.callback((error, data) => {
                     if (error || data.length < 1) {
@@ -125,7 +126,7 @@ class RedditBot {
     isReplied(commentId, callback) {
         let details = null;
         return new Promise((resolve, reject) => {
-            commentDb.find().make(filter => {
+            this.commentsDatabase.find().make(filter => {
                 filter.where('id', '=', commentId);
                 filter.callback((error, response) => {
                     if (error || response.length < 1) {
@@ -141,7 +142,7 @@ class RedditBot {
     }
 
     addReplied(commentId) {
-        commentDb.insert({
+        this.commentsDatabase.insert({
             id: commentId,
         }, true).where('id', commentId);
     }
@@ -154,7 +155,7 @@ class RedditBot {
         marketversion,
         desc
     }) {
-        db.insert({
+        this.appsDatabase.insert({
             id: id[0],
             updated: lastupdated[0],
             name: name[0],

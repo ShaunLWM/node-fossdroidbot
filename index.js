@@ -1,6 +1,6 @@
 const RedditBot = require('./src/bot');
 let bot = new RedditBot({
-    dataFolder: __dirname
+    dataFolder: `${__dirname}/data`
 });
 
 bot.updateRepository(error => {
