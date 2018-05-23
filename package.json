@@ -1,10 +1,13 @@
 {
   "name": "node-fossdroidbot",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "main": "index.js",
   "repository": "git@github.com:ShaunLWM/node-fossdroidbot.git",
   "author": "Shaun <shaunidiot@users.noreply.github.com>",
   "license": "MIT",
+  "scripts": {
+    "start": "node ./index.js"
+  },
   "dependencies": {
     "async": "^2.6.0",
     "cheerio": "^1.0.0-rc.2",
@@ -14,6 +17,8 @@
     "request": "^2.86.0",
     "request-promise": "^4.2.2",
     "snoowrap": "^1.15.2",
+    "winston": "^2.4.2",
+    "winston-daily-rotate-file": "^3.1.4",
     "xml2js": "^0.4.19"
   },
   "devDependencies": {}

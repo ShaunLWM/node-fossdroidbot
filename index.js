@@ -1,8 +1,8 @@
-const RedditBot = require('./bot');
+const RedditBot = require('./src/bot');
 RedditBot.updateRepository(error => {
     if (error) {
         return console.log(error);
     }
 
-    RedditBot.start();
+    return RedditBot.start();
 });
