@@ -8,8 +8,10 @@ module.exports = {
     subreddits: ['test'],
     maxAppsPerComment: 10,
     maxAppsBodyFormula: "\n\nMaximum of 10 applications only",
-    closingFormula: "\n\n------\n\n[^Source ^Code](https://github.com/crisbal/PlayStoreLinks_Bot) ^| [^Feedback/Bug ^report](http://www.reddit.com/r/cris9696) ^| ^Bot ^by ^/u/cris9696 ",
+    closingFormula: "\n\n---------------\n\n[^(Source Code)](https://github.com/ShaunLWM/node-fossdroidbot) ^(| A bot by) [^(shaunidiot)](https://www.reddit.com/u/shaunidiot)",
     logFile: "bot.log",
     botRunningFile: "botRunning",
-    nosqlFile: 'database.nosql'
+    appsDatabaseFilename: "database.nosql",
+    commentsDatabaseFilename: "comments.nosql",
+    repositoryFilename: "repo.xml"
 }
