@@ -98,6 +98,7 @@ class RedditBot {
                 body += config.maxAppsBodyFormula;
             }
 
+            body += config.closingFormula;
             return callback(error, body);
         });
     }
