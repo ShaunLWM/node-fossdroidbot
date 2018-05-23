@@ -198,6 +198,7 @@ class RedditBot {
             }
 
             async.eachSeries(comments, (comment, callback) => {
+                logger.silly(`Processing commentId ${comment.id}`);
                 this.isReplied(comment.id).then(replied => {
                     if (replied != NO_REPLY_FOUND) {
                         logger.debug(`[${comment.id}]: Replied before.`);

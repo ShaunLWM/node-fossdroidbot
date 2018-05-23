@@ -11,6 +11,7 @@ var transport = new (winston.transports.DailyRotateFile)({
 });
 
 var logger = new (winston.Logger)({
+    level: 'silly',
     transports: [
         transport,
         new (winston.transports.Console)({ colorize: true })
@@ -36,6 +37,9 @@ module.exports = {
     },
     debug(...args) {
         logger.debug(timestamp(), ...args);
+    },
+    silly(...args) {
+        logger.silly(timestamp(), ...args);
     },
     raw(...args) {
         logger.verbose(...args);
