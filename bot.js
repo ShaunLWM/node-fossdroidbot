@@ -188,6 +188,11 @@ class RedditBot {
             var match = commentRegex.exec(converted);
             return match != null;
         }).then(comments => {
+            if (comments.length < 1) {
+                console.log('No comments found.');
+                return this.stop();
+            }
+
             async.eachSeries(comments, (comment, callback) => {
                 this.isReplied(comment.id).then(replied => {
                     if (replied != NO_REPLY_FOUND) {
