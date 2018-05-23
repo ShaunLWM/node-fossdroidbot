@@ -7,6 +7,7 @@ module.exports = {
     },
     subreddits: ['test'],
     maxAppsPerComment: 10,
+    maxAppsBodyFormula: "\n\nMaximum of 10 applications only",
     closingFormula: "\n\n------\n\n[^Source ^Code](https://github.com/crisbal/PlayStoreLinks_Bot) ^| [^Feedback/Bug ^report](http://www.reddit.com/r/cris9696) ^| ^Bot ^by ^/u/cris9696 ",
     logFile: "bot.log",
     botRunningFile: "botRunning",

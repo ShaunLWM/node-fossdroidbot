@@ -68,6 +68,12 @@ class RedditBot {
     generateReply(apps, callback) {
         let requestedApps = apps.split(',');
         let body = '';
+        let isTooMany = false;
+        if (requestedApps > config.maxAppsPerComment) {
+            isTooMany = true;
+            requestedApps = requestedApps.slice(0, config.maxAppsPerComment);
+        }
+
         console.log('Searching for apps in comments: ' + requestedApps);
         async.eachSeries(requestedApps, (appName, cb) => {
             console.log(`Searching for ${appName.trim()}`);
@@ -88,6 +94,10 @@ class RedditBot {
                 return cb();
             });
         }, error => {
+            if (isTooMany) {
+                body += config.maxAppsBodyFormula;
+            }
+
             return callback(error, body);
         });
     }
