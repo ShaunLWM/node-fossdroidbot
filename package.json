@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "async": "^2.6.0",
+    "chalk": "^2.4.1",
     "cheerio": "^1.0.0-rc.2",
     "fs-extra": "^6.0.1",
     "markdown": "^0.5.0",
+    "moment": "^2.22.1",
     "nosql": "^6.1.0",
     "request": "^2.86.0",
     "request-promise": "^4.2.2",
