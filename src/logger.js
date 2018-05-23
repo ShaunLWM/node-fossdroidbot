@@ -5,7 +5,7 @@ require('winston-daily-rotate-file');
 var transport = new (winston.transports.DailyRotateFile)({
     filename: 'application-%DATE%.log',
     datePattern: 'YYYY-MM-DD-HH',
-    zippedArchive: true,
+    zippedArchive: false,
     maxSize: '20m',
     maxFiles: '14d'
 });
@@ -21,7 +21,7 @@ function timestamp() {
     const format = "YYYY-MM-DD HH:mm:ss";
     const tz = "UTC+00:00";
     const time = moment().utcOffset(tz).format(format);
-    return colors.dim(time);
+    return time;
 }
 
 module.exports = {
