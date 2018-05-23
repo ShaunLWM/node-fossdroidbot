@@ -21,7 +21,7 @@ let db = NoSQL.load(DATABASE_APPS);
 let commentDb = NoSQL.load(DATABASE_COMMENTS);
 
 class RedditBot {
-    constructor() {
+    constructor({ dataFolder }) {
         this.repoFileDirectory = `${__dirname}/${REPO_FILENAME}`;
         this.repoFile = null;
         this.botRunningFile = `${__dirname}/${config.botRunningFile}`;
@@ -237,4 +237,4 @@ class RedditBot {
     }
 }
 
-module.exports = new RedditBot();
+module.exports = RedditBot;
