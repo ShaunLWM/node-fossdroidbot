@@ -65,3 +65,4 @@ repo.xml
 data.json
 database.nosql
 comments.nosql
+config.js
