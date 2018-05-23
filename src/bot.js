@@ -25,6 +25,7 @@ class RedditBot {
         this.repoFileDirectory = `${this.dataFolder}/${config.repositoryFilename}`;
         this.repoFile = null;
         this.botRunningFile = `${this.dataFolder}/${config.botRunningFile}`;
+        fs.ensureDirSync(this.dataFolder);
         this.reddit = new snoowrap(config.account);
         if (typeof this.reddit.getMe() == 'undefined') {
             console.error('Unable to get bot info..');
