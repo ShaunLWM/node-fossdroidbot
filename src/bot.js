@@ -15,8 +15,9 @@ const NO_APP_FOUND = 'no-app-found';
 const NO_REPLY_FOUND = 'no-reply-found';
 
 class RedditBot {
-    constructor({ dataFolder }) {
+    constructor({ dataFolder, logFolder }) {
         this.dataFolder = dataFolder;
+        this.logFolder = logFolder;
         this.appDatabaseDirectory = `${dataFolder}/${config.appsDatabaseFilename}`;
         this.appsDatabase = NoSQL.load(this.appDatabaseDirectory);
 
@@ -27,6 +28,7 @@ class RedditBot {
         this.repoFile = null;
         this.botRunningFile = `${this.dataFolder}/${config.botRunningFile}`;
         fs.ensureDirSync(this.dataFolder);
+        fs.ensureDirSync(this.logFolder);
         this.reddit = new snoowrap(config.account);
         if (typeof this.reddit.getMe() == 'undefined') {
             logger.error('Unable to get bot info..');
