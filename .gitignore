@@ -67,3 +67,4 @@ database.nosql
 comments.nosql
 config.js
 .audit.json
+logs/

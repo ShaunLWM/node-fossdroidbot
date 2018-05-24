@@ -7,7 +7,7 @@ const rp = require('request-promise');
 const parseString = require('xml2js').parseString;
 const async = require('async');
 
-const logger = require('./logger');
+const Logger = require('./logger');
 const NoSQL = require('nosql');
 
 const FDROID_REPO_XML = "https://f-droid.org/repo/index.xml";
@@ -18,6 +18,7 @@ class RedditBot {
     constructor({ dataFolder, logFolder }) {
         this.dataFolder = dataFolder;
         this.logFolder = logFolder;
+        this.logger = new Logger(this.logFolder);
         this.appDatabaseDirectory = `${dataFolder}/${config.appsDatabaseFilename}`;
         this.appsDatabase = NoSQL.load(this.appDatabaseDirectory);
 
@@ -31,7 +32,7 @@ class RedditBot {
         fs.ensureDirSync(this.logFolder);
         this.reddit = new snoowrap(config.account);
         if (typeof this.reddit.getMe() == 'undefined') {
-            logger.error('Unable to get bot info..');
+            this.logger.error('Unable to get bot info..');
             return process.exit(1);
         }
     }
@@ -40,16 +41,16 @@ class RedditBot {
         if (!fs.pathExistsSync(this.repoFileDirectory) || ((parseInt(fs.statSync(this.repoFileDirectory).mtimeMs / 1000) + 86400) < Math.floor(new Date() / 1000))) {
             fs.removeSync(this.repoFileDirectory);
             fs.removeSync(this.commentsDatabaseDirectory);
-            logger.info('Downloading repository..');
+            this.logger.info('Downloading repository..');
             rp(FDROID_REPO_XML)
                 .then(data => {
                     fs.writeFileSync(this.repoFileDirectory, data);
-                    logger.info('Downloaded repository..');
+                    this.logger.info('Downloaded repository..');
                     parseString(fs.readFileSync(this.repoFileDirectory), (err, result) => {
                         this.repoFile = result.fdroid.application;
-                        logger.info(`${this.repoFile.length} application loaded..`);
+                        this.logger.info(`${this.repoFile.length} application loaded..`);
                         this.repoFile.forEach((app, index) => {
-                            logger.debug(`Inserting ${index}`);
+                            this.logger.debug(`Inserting ${index}`);
                             this.insertToDatabase(app);
                         });
 
@@ -57,14 +58,14 @@ class RedditBot {
                     });
                 })
                 .catch(error => {
-                    logger.error(error);
+                    this.logger.error(error);
                     return callback(error);
                 });
         } else {
-            logger.info('Repository is up-to-date..');
+            this.logger.info('Repository is up-to-date..');
             parseString(fs.readFileSync(this.repoFileDirectory), (err, result) => {
                 this.repoFile = result.fdroid.application;
-                logger.info(`${this.repoFile.length} application loaded..`);
+                this.logger.info(`${this.repoFile.length} application loaded..`);
                 return callback();
             });
         }
@@ -77,12 +78,12 @@ class RedditBot {
         if (requestedApps.length > config.maxAppsPerComment) {
             isTooMany = true;
             requestedApps = requestedApps.slice(0, config.maxAppsPerComment);
-            logger.warn(`Too many apps request..`);
+            this.logger.warn(`Too many apps request..`);
         }
 
-        logger.info('Searching for apps in comments: ' + requestedApps);
+        this.logger.info('Searching for apps in comments: ' + requestedApps);
         async.eachSeries(requestedApps, (appName, cb) => {
-            logger.debug(`Searching for ${appName.trim()}`);
+            this.logger.debug(`Searching for ${appName.trim()}`);
             const data = this.findApp(appName.trim()).then(data => {
                 if (data === NO_APP_FOUND) {
                     body += `No application found for "${appName.trim()}"\n\n`;
@@ -170,9 +171,9 @@ class RedditBot {
     }
 
     stop() {
-        logger.info('Stopping bot..');
+        this.logger.info('Stopping bot..');
         if (fs.pathExistsSync(this.botRunningFile)) {
-            logger.info('Deleting lockfile..');
+            this.logger.info('Deleting lockfile..');
             fs.removeSync(this.botRunningFile);
         }
 
@@ -180,14 +181,14 @@ class RedditBot {
     }
 
     start() {
-        logger.info('Starting bot..');
+        this.logger.info('Starting bot..');
         if (fs.pathExistsSync(this.botRunningFile)) {
-            logger.error('The bot is already running..');
+            this.logger.error('The bot is already running..');
             return this.stop();
         }
 
         fs.ensureFileSync(this.botRunningFile);
-        logger.debug('Bot logging in..');
+        this.logger.debug('Bot logging in..');
         this.reddit.getSubreddit(config.subreddits.join('+')).getNewComments().filter(comment => {
             let converted = utils.convertMarkdown(comment.body);
             var commentRegex = /foss[\s]*me[\s]*:[\s]*(.*?)(?:\.|;|$)/gim;
@@ -195,15 +196,15 @@ class RedditBot {
             return match != null;
         }).then(comments => {
             if (comments.length < 1) {
-                logger.debug('No comments found.');
+                this.logger.debug('No comments found.');
                 return this.stop();
             }
 
             async.eachSeries(comments, (comment, callback) => {
-                logger.silly(`Processing commentId ${comment.id}`);
+                this.logger.silly(`Processing commentId ${comment.id}`);
                 this.isReplied(comment.id).then(replied => {
                     if (replied != NO_REPLY_FOUND) {
-                        logger.debug(`[${comment.id}]: Replied before.`);
+                        this.logger.debug(`[${comment.id}]: Replied before.`);
                         return callback();
                     }
 
@@ -221,17 +222,17 @@ class RedditBot {
 
                         setTimeout(() => {
                             this.reddit.getComment(comment.id).reply(result).then(() => {
-                                logger.info(`[${comment.id}] Replied to comment ${comment.id}`);
+                                this.logger.info(`[${comment.id}] Replied to comment ${comment.id}`);
                                 this.addReplied(comment.id);
                                 return callback();
                             }).catch(error => {
-                                logger.error(`${comment.id} Error replying to comment ${comment.id} -> ${error}`);
+                                this.logger.error(`${comment.id} Error replying to comment ${comment.id} -> ${error}`);
                                 return callback();
                             });
                         }, 2000);
                     });
                 }).catch(error => {
-                    logger.error(`[${comment.id}] Error: ${error}`);
+                    this.logger.error(`[${comment.id}] Error: ${error}`);
                     return callback();
                 });
             }, error => {
